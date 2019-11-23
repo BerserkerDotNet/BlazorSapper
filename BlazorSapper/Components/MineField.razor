@@ -1,0 +1,303 @@
+﻿@inject IJSRuntime JsRuntime
+
+<div class="form-group mb-2">
+    <label for="difficultySelector">Difficulty:</label>
+    <select name="difficultySelector" class="form-control" @bind="Difficulty">
+        <option value="1">Easy</option>
+        <option value="2">Medium</option>
+        <option value="3">Hard</option>
+    </select>
+</div>
+
+<button class="btn btn-primary mb-2" @onclick="OnGameStart">Start</button>
+
+<div class="form-group mb-2">
+    <label>Flags:</label>
+    <span>@FlagsCount</span>
+    <label>Time:</label>
+    <span>@TimeElapsed</span>
+</div>
+
+@if (GameOver)
+{
+    <p>@GameOverMessage</p>
+}
+
+<div class="form-group">
+    @for (var i = 0; i < _mineField.GetLength(0); i++)
+    {
+        <div class="mine-row">
+            @for (int j = 0; j < _mineField.GetLength(1); j++)
+            {
+                var x = i;
+                var y = j;
+
+                if (_mineFieldFlags[x, y] == TileState.Open || GameOver)
+                {
+                    <div class="tile bg-@GetTileBackground(x, y) text-@GetTileClass(x, y)">
+                        @GetTileText(x, y)
+                    </div>
+                }
+                else
+                {
+                    <button class="tile btn btn-@GetTileClass(x, y)"
+                            @oncontextmenu="args => OnTileClick(args, x, y)"
+                            @onclick="args => OnTileClick(args, x, y)">
+                        @GetTileText(x, y)
+                    </button>
+                }
+            }
+        </div>
+    }
+</div>
+
+
+@code {
+    System.Threading.Timer _timer;
+
+    Random _random = new Random();
+
+    private int[,] _mineField;
+    private TileState[,] _mineFieldFlags;
+    private int flaggedMines = 0;
+
+    public int Difficulty { get; set; } = 1;
+
+    public int MinesCount => Difficulty * 10;
+
+    public bool GameOver { get; set; }
+
+    public string GameOverMessage { get; set; }
+
+    public TimeSpan TimeElapsed { get; set; }
+
+    public int FlagsCount { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _mineField = new int[0, 0];
+        _mineFieldFlags = new TileState[0, 0];
+        _timer = new System.Threading.Timer(_ =>
+        {
+            TimeElapsed += TimeSpan.FromSeconds(1);
+            this.StateHasChanged();
+        }, null, 0, System.Threading.Timeout.Infinite);
+    }
+
+    private void OnGameStart(MouseEventArgs args)
+    {
+        FlagsCount = (Difficulty + 1) * 10;
+
+        var fieldSize = (int)(Math.Max((Difficulty - 0.8), 1) * 10);
+
+        _mineField = new int[fieldSize, fieldSize];
+        _mineFieldFlags = new TileState[fieldSize, fieldSize];
+        for (int i = 0; i < MinesCount; i++)
+        {
+            while (true)
+            {
+                var x = _random.Next(0, fieldSize);
+                var y = _random.Next(0, fieldSize);
+
+                if (_mineField[x, y] != -1)
+                {
+                    _mineField[x, y] = -1;
+                    UpdateAdjesantScores(x, y);
+                    break;
+                }
+            }
+        }
+
+        flaggedMines = 0;
+        GameOver = false;
+        TimeElapsed = TimeSpan.Zero;
+        _timer.Change(0, 1000);
+        this.StateHasChanged();
+    }
+
+    private void EndGame(bool victory)
+    {
+        GameOverMessage = victory ? "Hooray! All mines disabled" : "Oops! No luck!";
+        GameOver = true;
+        _timer.Change(0, System.Threading.Timeout.Infinite);
+        ShowMines();
+
+        this.StateHasChanged();
+    }
+
+    private void OnTileClick(MouseEventArgs args, int x, int y)
+    {
+        if (_mineFieldFlags[x, y] == TileState.Open)
+        {
+            return;
+        }
+
+        if (args.Button == 2) //Right click
+        {
+            _mineFieldFlags[x, y] = _mineFieldFlags[x, y] == TileState.Flagged ? TileState.None : TileState.Flagged;
+            if (_mineFieldFlags[x, y] == TileState.Flagged)
+            {
+                FlagsCount--;
+
+                if (_mineField[x, y] == -1)
+                {
+                    flaggedMines++;
+                }
+            }
+            else
+            {
+                if (_mineField[x, y] == -1)
+                {
+                    flaggedMines--;
+                }
+            }
+
+            if (flaggedMines == MinesCount || FlagsCount == 0)
+            {
+                EndGame(victory: flaggedMines == MinesCount);
+            }
+
+            this.StateHasChanged();
+
+            return;
+        }
+
+        if (_mineField[x, y] == -1)
+        {
+            EndGame(victory: false);
+        }
+        else if (_mineField[x, y] > 0)
+        {
+            _mineFieldFlags[x, y] = TileState.Open;
+        }
+        else
+        {
+            _mineFieldFlags[x, y] = TileState.Open;
+            OpenEmptyAdjesantTiles(x, y);
+        }
+
+        this.StateHasChanged();
+    }
+
+    private void ShowMines()
+    {
+        for (int i = 0; i < _mineFieldFlags.GetLength(0); i++)
+        {
+            for (int j = 0; j < _mineFieldFlags.GetLength(1); j++)
+            {
+                if (_mineField[i, j] == -1 && _mineFieldFlags[i, j] != TileState.Flagged)
+                {
+                    _mineFieldFlags[i, j] = TileState.Open;
+                }
+            }
+        }
+    }
+
+    private void OpenEmptyAdjesantTiles(int x, int y)
+    {
+        ForEachAdjesantTile(x, y, (dx, dy) =>
+        {
+            if (_mineFieldFlags[dx, dy] == TileState.None)
+            {
+                _mineFieldFlags[dx, dy] = TileState.Open;
+                if (_mineField[dx, dy] == 0)
+                {
+                    OpenEmptyAdjesantTiles(dx, dy);
+                }
+            }
+        });
+    }
+
+    private void UpdateAdjesantScores(int x, int y)
+    {
+        ForEachAdjesantTile(x, y, (dx, dy) =>
+        {
+            if (_mineField[dx, dy] != -1)
+            {
+                _mineField[dx, dy]++;
+            }
+        });
+    }
+
+    private void ForEachAdjesantTile(int x, int y, Action<int, int> action)
+    {
+        var adjecentTiles = new[] { (-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0) };
+
+        foreach (var adjecentTile in adjecentTiles)
+        {
+            var dx = x + adjecentTile.Item1;
+            var dy = y + adjecentTile.Item2;
+            if (dx >= 0 && dy >= 0 && dx < _mineField.GetLength(0) && dy < _mineField.GetLength(1))
+            {
+                action(dx, dy);
+            }
+        }
+    }
+
+    private string GetTileText(int i, int j)
+    {
+        return _mineField[i, j] > 0 && _mineFieldFlags[i, j] == TileState.Open ? _mineField[i, j].ToString() : string.Empty;
+    }
+
+    private string GetTileBackground(int i, int j)
+    {
+        if (_mineField[i, j] == -1 && _mineFieldFlags[i, j] == TileState.Open)
+        {
+            return "danger";
+        }
+        else if (_mineFieldFlags[i, j] == TileState.None)
+        {
+            return "primary";
+        }
+        else if (_mineFieldFlags[i, j] == TileState.Flagged)
+        {
+            return "warning";
+        }
+        else
+        {
+            return "light";
+        }
+    }
+
+    private string GetTileClass(int i, int j)
+    {
+                    if (_mineFieldFlags[i, j] != TileState.Flagged && _mineField[i, j] == -1)
+            {
+                return "danger";
+            }
+
+        if (_mineFieldFlags[i, j] == TileState.Open)
+        {
+            if (_mineField[i, j] == -1)
+            {
+                return "danger";
+            }
+            else if (_mineField[i, j] == 1)
+            {
+                return "success";
+            }
+            else if (_mineField[i, j] == 2)
+            {
+                return "warning";
+            }
+            else if (_mineField[i, j] > 2)
+            {
+                return "danger";
+            }
+
+            return "light";
+        }
+        else if (_mineFieldFlags[i, j] == TileState.Flagged)
+        {
+            return "warning";
+        }
+
+        return "primary";
+    }
+
+    private ValueTask HandleClick(MouseEventArgs @event)
+    {
+        return JsRuntime.InvokeVoidAsync("blazorHandlers.handleClick", @event, DotNetObjectReference.Create(this));
+    }
+}
