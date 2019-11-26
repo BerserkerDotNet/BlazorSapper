@@ -1,0 +1,14 @@
+﻿@inherits TileBase
+
+@if (Model.State == TileState.Open || IsReadOnly)
+{
+    <div class="tile bg-@GetTileBackground() text-@GetTileClass()">
+        @GetTileText()
+    </div>
+}
+else
+{
+    <button class="tile btn btn-@GetTileClass()" @oncontextmenu="OnClick" @onclick="OnClick">
+        @GetTileText()
+    </button>
+}

@@ -4,6 +4,7 @@
     {
         None,
         Open,
-        Flagged
+        Flagged,
+        Detonated
     }
 }

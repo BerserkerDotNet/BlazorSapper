@@ -1,0 +1,44 @@
+﻿@if (IsRunning)
+{
+    <div class="form-group mb-2">
+        <label>Flags:</label>
+        <span>@TotalFlagsAvailable</span>
+        <label>Time:</label>
+        <span>@TimeElapsed</span>
+    </div>
+}
+
+@if (IsOver)
+{
+    if (IsVictory)
+    {
+        <div class="alert alert-success" role="alert">
+            <strong>Victory</strong> You successfully avoided all mines!
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger" role="alert">
+            <strong>Oops!</strong> You stepped on a mine :(
+        </div>
+    }
+}
+
+@code{
+
+    [Parameter]
+    public bool IsRunning { get; set; }
+
+    [Parameter]
+    public bool IsOver { get; set; }
+
+    [Parameter]
+    public bool IsVictory { get; set; }
+
+    [Parameter]
+    public int TotalFlagsAvailable { get; set; }
+
+    [Parameter]
+    public TimeSpan TimeElapsed { get; set; }
+
+}

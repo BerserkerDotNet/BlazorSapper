@@ -1,5 +1,66 @@
 ﻿@page "/"
+@inject IJSRuntime JsRuntime
 
 <h1>Welcome to Sapper game</h1>
+<GameMenu 
+          Difficulty="@Game.Difficulty" 
+          IsOver="Game.IsOver" 
+          IsRunning="Game.IsRunning" 
+          OnGameStart="OnGameStart" 
+          OnGameStop="OnGameStop" />
+<StatusHeader 
+              IsRunning="Game.IsRunning" 
+              IsOver="Game.IsOver" 
+              IsVictory="Game.IsVictory"
+              TotalFlagsAvailable="Game.TotalFlagsAvailable"
+              TimeElapsed="Game.TimeElapsed"/>
+<MineField FieldSize="Game.FieldSize">
+    <TileTemplate Context="ctx">
+        <Tile Model="Game.GetTile(ctx.x, ctx.y)" IsReadOnly="Game.IsOver" OnTileStateChanged="OnTileStateChanged" />
+    </TileTemplate>
+</MineField>
 
-<BlazorSapper.Components.MineField />
+@code {
+
+    private GameState Game { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Game = new GameState();
+    }
+
+    private void OnGameStart(MouseEventArgs args)
+    {
+        Game.Start();
+    }
+
+    private void OnGameStop(MouseEventArgs args)
+    {
+        Game.Defeat();
+    }
+
+    protected void OnTileStateChanged(TileStateChangedEventArgs args)
+    {
+        var tile = args.Tile;
+        if (tile.State == TileState.Open && tile.Rank == 0)
+        {
+            Game.OpenEmptyAdjesantTiles(tile.Position.x, tile.Position.y);
+        }
+
+        if (tile.State == TileState.Detonated)
+        {
+            Game.Defeat();
+        }
+
+        if (tile.State == TileState.Flagged)
+        {
+            Game.OnFlagPlaced(tile);
+        }
+
+        if (args.Old == TileState.Flagged && tile.State == TileState.None)
+        {
+            Game.OnFlagRemoved(tile);
+        }
+    }
+}
+
