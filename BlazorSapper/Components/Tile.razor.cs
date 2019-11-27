@@ -22,7 +22,7 @@ namespace BlazorSapper.Components
 
         protected string GetTileClass()
         {
-            if (IsDebugMode && Model.State != TileState.Flagged && Model.IsMine)
+            if (IsDebugMode && Model.State != TileState.None && Model.IsMine)
             {
                 return "danger";
             }
@@ -65,7 +65,7 @@ namespace BlazorSapper.Components
         {
             if (Model.IsMine && Model.State == TileState.Open)
             {
-                return "danger";
+                return "white";
             }
             else if (Model.State == TileState.None)
             {
@@ -73,7 +73,7 @@ namespace BlazorSapper.Components
             }
             else if (Model.State == TileState.Flagged)
             {
-                return "warning";
+                return "white";
             }
             else
             {

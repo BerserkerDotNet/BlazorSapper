@@ -3,12 +3,34 @@
 @if (Model.State == TileState.Open || IsReadOnly)
 {
     <div class="tile bg-@GetTileBackground() text-@GetTileClass()">
-        @GetTileText()
+        @if (Model.State == TileState.Flagged)
+        {
+            <span class="oi oi-flag"></span>
+        }
+        else if (Model.State == TileState.Open && Model.Rank == -1)
+        {
+            <span class="oi oi-sun"></span>
+        }
+        else
+        {
+            @GetTileText()
+        }
     </div>
 }
 else
 {
     <button class="tile btn btn-@GetTileClass()" @oncontextmenu="OnClick" @onclick="OnClick">
-        @GetTileText()
+        @if (Model.State == TileState.Flagged)
+        {
+            <span class="oi oi-flag"></span>
+        }
+        else if(Model.State == TileState.Open && Model.Rank == -1)
+        {
+            <span class="oi oi-sun"></span>
+        }
+        else
+        {
+            @GetTileText()
+        }
     </button>
 }
