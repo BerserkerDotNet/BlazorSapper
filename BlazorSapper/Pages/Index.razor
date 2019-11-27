@@ -1,8 +1,8 @@
 ﻿@page "/"
-@inject IJSRuntime JsRuntime
+@inject SoundHelper Sounds
 @inject NavigationManager Navigation
 
-<h1>Welcome to Sapper game</h1>
+<h3>Welcome to Sapper game</h3>
 <GameMenu 
           @bind-Difficulty="@Game.Difficulty" 
           IsOver="Game.IsOver" 
@@ -38,7 +38,7 @@
             DebugMode = bool.Parse(debugMode.First());
         }
 
-        Game = new GameState(() => this.StateHasChanged());
+        Game = new GameState(() => this.StateHasChanged(), Sounds);
     }
 
     private void OnGameStart(MouseEventArgs args)
@@ -51,8 +51,10 @@
         Game.Defeat();
     }
 
-    protected void OnTileStateChanged(TileStateChangedEventArgs args)
+    protected async Task OnTileStateChanged(TileStateChangedEventArgs args)
     {
+        await Sounds.Click();
+
         var tile = args.Tile;
         if (tile.State == TileState.Open && tile.Rank == 0)
         {
@@ -62,16 +64,19 @@
         if (tile.State == TileState.Detonated)
         {
             Game.Defeat();
+            await Sounds.GameOver();
         }
 
         if (tile.State == TileState.Flagged)
         {
-            Game.OnFlagPlaced(tile);
+            await Game.OnFlagPlaced(tile);
+            await Sounds.Flag();
         }
 
         if (args.Old == TileState.Flagged && tile.State == TileState.None)
         {
-            Game.OnFlagRemoved(tile);
+            await Game.OnFlagRemoved(tile);
+            await Sounds.UnFlag();
         }
     }
 }

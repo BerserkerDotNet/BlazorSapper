@@ -7,6 +7,7 @@ namespace BlazorSapper
     {
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<SoundHelper>();
         }
 
         public void Configure(IComponentsApplicationBuilder app)

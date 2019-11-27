@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace BlazorSapper
 {
@@ -9,8 +10,9 @@ namespace BlazorSapper
 
         private Random _random = new Random();
         private TileModel[,] _mineField;
+        private readonly SoundHelper _sounds;
 
-        public GameState(Action stateChangedCallback)
+        public GameState(Action stateChangedCallback, SoundHelper sounds)
         {
             _mineField = new TileModel[0, 0];
             _timer = new Timer(_ =>
@@ -18,6 +20,7 @@ namespace BlazorSapper
                 TimeElapsed += TimeSpan.FromSeconds(1);
                 stateChangedCallback();
             }, null, 0, Timeout.Infinite);
+            _sounds = sounds;
         }
 
         public int Difficulty { get; set; } = 1;
@@ -41,7 +44,7 @@ namespace BlazorSapper
         public void Start()
         {
             TotalFlagsAvailable = (Difficulty + 1) * 10;
-            FieldSize = Difficulty < 3 ? 10 : 15;
+            FieldSize = Difficulty < 3 ? 10 : 13;
             InitializeField();
             for (int i = 0; i < MinesCount; i++)
             {
@@ -68,7 +71,7 @@ namespace BlazorSapper
 
         public TileModel GetTile(int x, int y) => _mineField[x, y];
 
-        public void OnFlagPlaced(TileModel tile)
+        public async ValueTask OnFlagPlaced(TileModel tile)
         {
             TotalFlagsAvailable--;
 
@@ -80,15 +83,18 @@ namespace BlazorSapper
             if (FlagsPlaced == MinesCount || TotalFlagsAvailable == 0)
             {
                 End(FlagsPlaced == MinesCount);
+                await _sounds.GameWin();
             }
         }
 
-        public void OnFlagRemoved(TileModel tile)
+        public ValueTask OnFlagRemoved(TileModel tile)
         {
             if (tile.IsMine)
             {
                 FlagsPlaced--;
             }
+
+            return new ValueTask(Task.CompletedTask);
         }
 
         public void OpenEmptyAdjesantTiles(int x, int y)
