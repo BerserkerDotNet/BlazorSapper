@@ -9,21 +9,39 @@ namespace BlazorSapper
 
         private Random _random = new Random();
         private TileModel[,] _mineField;
-        private int _flaggedMines = 0;
 
-        public GameState()
+        public GameState(Action stateChangedCallback)
         {
             _mineField = new TileModel[0, 0];
             _timer = new Timer(_ =>
             {
                 TimeElapsed += TimeSpan.FromSeconds(1);
+                stateChangedCallback();
             }, null, 0, Timeout.Infinite);
         }
+
+        public int Difficulty { get; set; } = 1;
+
+        public int FieldSize { get; private set; }
+
+        public TimeSpan TimeElapsed { get; set; }
+
+        public int TotalFlagsAvailable { get; private set; }
+
+        public int MinesCount => Difficulty * 10;
+
+        public int FlagsPlaced { get; private set; } = 0;
+
+        public bool IsRunning { get; set; }
+
+        public bool IsOver { get; set; }
+
+        public bool IsVictory { get; set; }
 
         public void Start()
         {
             TotalFlagsAvailable = (Difficulty + 1) * 10;
-            FieldSize = (int)(Math.Max((Difficulty - 0.8), 1) * 10);
+            FieldSize = Difficulty < 3 ? 10 : 15;
             InitializeField();
             for (int i = 0; i < MinesCount; i++)
             {
@@ -41,40 +59,12 @@ namespace BlazorSapper
                 }
             }
 
-            _flaggedMines = 0;
+            FlagsPlaced = 0;
             IsRunning = true;
             IsOver = false;
             TimeElapsed = TimeSpan.Zero;
             _timer.Change(0, 1000);
         }
-
-        private void InitializeField()
-        {
-            _mineField = new TileModel[FieldSize, FieldSize];
-            for (int i = 0; i < FieldSize; i++)
-            {
-                for (int j = 0; j < FieldSize; j++)
-                {
-                    _mineField[i, j] = new TileModel(0, TileState.None, (i, j));
-                }
-            }
-        }
-
-        public int Difficulty { get; set; } = 1;
-
-        public int FieldSize { get; private set; }
-
-        public TimeSpan TimeElapsed { get; set; }
-
-        public int TotalFlagsAvailable { get; private set; }
-
-        public int MinesCount => Difficulty * 10;
-
-        public bool IsRunning { get; set; }
-
-        public bool IsOver { get; set; }
-
-        public bool IsVictory { get; set; }
 
         public TileModel GetTile(int x, int y) => _mineField[x, y];
 
@@ -84,12 +74,12 @@ namespace BlazorSapper
 
             if (tile.IsMine)
             {
-                _flaggedMines++;
+                FlagsPlaced++;
             }
 
-            if (_flaggedMines == MinesCount || TotalFlagsAvailable == 0)
+            if (FlagsPlaced == MinesCount || TotalFlagsAvailable == 0)
             {
-                End(_flaggedMines == MinesCount);
+                End(FlagsPlaced == MinesCount);
             }
         }
 
@@ -97,7 +87,7 @@ namespace BlazorSapper
         {
             if (tile.IsMine)
             {
-                _flaggedMines--;
+                FlagsPlaced--;
             }
         }
 
@@ -167,6 +157,18 @@ namespace BlazorSapper
             IsRunning = false;
             _timer.Change(0, System.Threading.Timeout.Infinite);
             ShowMines();
+        }
+
+        private void InitializeField()
+        {
+            _mineField = new TileModel[FieldSize, FieldSize];
+            for (int i = 0; i < FieldSize; i++)
+            {
+                for (int j = 0; j < FieldSize; j++)
+                {
+                    _mineField[i, j] = new TileModel(0, TileState.None, (i, j));
+                }
+            }
         }
     }
 }

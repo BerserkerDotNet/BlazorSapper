@@ -9,6 +9,9 @@ namespace BlazorSapper.Components
         private const int Mine = -1;
 
         [Parameter]
+        public bool IsDebugMode { get; set; }
+
+        [Parameter]
         public bool IsReadOnly { get; set; }
 
         [Parameter] 
@@ -19,10 +22,10 @@ namespace BlazorSapper.Components
 
         protected string GetTileClass()
         {
-            //if (Model.State != TileState.Flagged && Model.IsMine)
-            //{
-            //    return "danger";
-            //}
+            if (IsDebugMode && Model.State != TileState.Flagged && Model.IsMine)
+            {
+                return "danger";
+            }
 
             if (Model.State == TileState.Open)
             {

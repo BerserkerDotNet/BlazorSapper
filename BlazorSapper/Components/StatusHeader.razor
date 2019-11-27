@@ -1,10 +1,14 @@
 ﻿@if (IsRunning)
 {
     <div class="form-group mb-2">
-        <label>Flags:</label>
+        <label><strong>Flags available:</strong></label>
         <span>@TotalFlagsAvailable</span>
-        <label>Time:</label>
+        <label><strong>Time:</strong></label>
         <span>@TimeElapsed</span>
+        <label><strong>Mines on the map:</strong></label>
+        <span>@MinesCount</span>
+        <label><strong>Flags placed:</strong></label>
+        <span>@FlagsPlaced</span>
     </div>
 }
 
@@ -37,6 +41,12 @@
 
     [Parameter]
     public int TotalFlagsAvailable { get; set; }
+
+    [Parameter]
+    public int MinesCount { get; set; }
+
+    [Parameter]
+    public int FlagsPlaced { get; set; }
 
     [Parameter]
     public TimeSpan TimeElapsed { get; set; }

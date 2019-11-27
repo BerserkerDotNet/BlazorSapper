@@ -1,9 +1,10 @@
 ﻿@page "/"
 @inject IJSRuntime JsRuntime
+@inject NavigationManager Navigation
 
 <h1>Welcome to Sapper game</h1>
 <GameMenu 
-          Difficulty="@Game.Difficulty" 
+          @bind-Difficulty="@Game.Difficulty" 
           IsOver="Game.IsOver" 
           IsRunning="Game.IsRunning" 
           OnGameStart="OnGameStart" 
@@ -13,20 +14,31 @@
               IsOver="Game.IsOver" 
               IsVictory="Game.IsVictory"
               TotalFlagsAvailable="Game.TotalFlagsAvailable"
+              MinesCount="Game.MinesCount"
+              FlagsPlaced="Game.FlagsPlaced"
               TimeElapsed="Game.TimeElapsed"/>
 <MineField FieldSize="Game.FieldSize">
     <TileTemplate Context="ctx">
-        <Tile Model="Game.GetTile(ctx.x, ctx.y)" IsReadOnly="Game.IsOver" OnTileStateChanged="OnTileStateChanged" />
+        <Tile IsDebugMode="DebugMode" Model="Game.GetTile(ctx.x, ctx.y)" IsReadOnly="Game.IsOver" OnTileStateChanged="OnTileStateChanged" />
     </TileTemplate>
 </MineField>
 
 @code {
 
+    public bool DebugMode { get; set; }
+
     private GameState Game { get; set; }
 
     protected override void OnInitialized()
     {
-        Game = new GameState();
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (query.TryGetValue("DebugMode", out var debugMode))
+        {
+            DebugMode = bool.Parse(debugMode.First());
+        }
+
+        Game = new GameState(() => this.StateHasChanged());
     }
 
     private void OnGameStart(MouseEventArgs args)
