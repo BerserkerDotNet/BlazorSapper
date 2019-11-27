@@ -1,0 +1,62 @@
+﻿<div class="form-group mb-2">
+    <label for="difficultySelector">Difficulty:</label>
+    <select @attributes="DifficultySelectorAttributes" name="difficultySelector" class="form-control" @bind="DifficultyInternal">
+        <option value="1">Easy</option>
+        <option value="2">Medium</option>
+        <option value="3">Hard</option>
+    </select>
+</div>
+
+@if (IsRunning)
+{
+    <button class="btn btn-danger mb-2" @onclick="OnGameStop">Stop</button>
+}
+else
+{
+    <button class="btn btn-primary mb-2" @onclick="OnGameStart">Start</button>
+}
+
+@code{
+
+    [Parameter]
+    public int Difficulty { get; set; }
+
+    [Parameter]
+    public EventCallback<int> DifficultyChanged { get; set; }
+
+    [Parameter]
+    public bool IsRunning { get; set; }
+
+    [Parameter]
+    public bool IsOver { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnGameStart { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnGameStop { get; set; }
+
+    private Dictionary<string, object> DifficultySelectorAttributes
+    {
+        get
+        {
+            var attributes = new Dictionary<string, object>(1);
+            if (IsRunning)
+            {
+                attributes.Add("disabled", true);
+            }
+
+            return attributes;
+        }
+    }
+
+    private int DifficultyInternal
+    {
+        get { return Difficulty; }
+        set
+        {
+            Difficulty = value;
+            DifficultyChanged.InvokeAsync(Difficulty);
+        }
+    }
+}
